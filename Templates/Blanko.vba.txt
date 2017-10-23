@@ -1,0 +1,8 @@
+'Simple Print Routine to print all sheets without contents - for handwritten spares, etc.
+' (c) by Martin Jung in 2017
+
+Sub PrintBlanko()
+  Application.Dialogs(xlDialogPrinterSetup).Show
+  ActiveWorkbook.PrintOut 1, 6
+  
+End Sub
