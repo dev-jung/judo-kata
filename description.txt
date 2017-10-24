@@ -3,7 +3,7 @@ Excel-Workbook mit den Registrierungsinformationen - sollte extra sein, weil das
 Makro: Randomizer
 Konfigurierbar: Bereiche des Randomizers
 
-Listen: 
+List: 
 Excel-Workbook mit den tatsächlichen Startlisten, aktualisiert auf die jeweils vorliegenden Ergebnisse.
 Befüllen durch Kopieren von aus den Starterlisten (passiert nur 1 mal (max 2 bei Finalrunden)
 Makro: Generieren der Wertungsbögen
@@ -13,21 +13,15 @@ Funktionen:
 Generiere Alle, Generiere pro Kata
 Erstelle PDF
 
-Bögen:
+Blank:
 Excel-Workbook zum Druck und zur Dateneingabe.
 Wird generiert, enthält festverdrahtete Referenzen, die ebenfalls generiert sind.
 Statisch: Punkte-Berechnung, Mittelwert, Abweichung zwischen den Wertungsrichtern
 
-Statistik:
+Result:
 Excel-Workbook zum Einsammeln aller Ergebnisse und für beliebige Auswertungen.
 
-
 Aufbau:
-/Templates/Listen.xlsm
-/Templates/Blanko.xlsm
-/Meisterschaft/Meldungen.xlsx
-/Meisterschaft/Listen.xlsm
-/Meisterschaft/Nage/P01-toriname-ukename.xlsm
-/Meisterschaft/Nage/P02-toriname-ukename.xlsm
-/Meisterschaft/Katame/P01-toriname-ukename.xlsm
-/Meisterschaft/Katame/P02-toriname-ukename.xlsm
+/Templates/List.xlsm
+/Templates/Blank.xlsm
+/examples Beispiel- und Testdaten
