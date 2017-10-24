@@ -24,4 +24,5 @@ Excel-Workbook zum Einsammeln aller Ergebnisse und für beliebige Auswertungen.
 Aufbau:
 /Templates/List.xlsm
 /Templates/Blank.xlsm
+/Templates/Results.xlsm
 /examples Beispiel- und Testdaten
