@@ -1,3 +1,4 @@
+Attribute VB_Name = "SheetGenerator"
 ' This is the main generator routine
 ' (c) by Martin Jung in 2017
 
@@ -53,7 +54,9 @@ Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath 
     ukeName = listSheet.Cells(pairRow, 5)
     Dim pairFile As Workbook
     Set pairFile = createFileForKata(templateFile, targetPath, kataSheetName, startingPosition, toriName, ukeName)
-    
+    If pairFile Is Nothing Then
+      GoTo NextPairIteration:
+    End If
     'Fill in I18/L10 Values
     pairFile.Sheets(1).Name = parameters(37, 2) ' Name of the Evaluation Sheet
     pairFile.Sheets(2).Name = parameters(38, 2) ' Name of the Evaluation Summary Sheet
@@ -126,6 +129,7 @@ Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath 
     
     pairFile.Close
     startNumber = startNumber + 1
+NextPairIteration:
   Next pairRow
 End Sub
 ' This generates a sheet for each judge in a newly created pair file
@@ -214,38 +218,50 @@ Sub setJudgeReferences(pairFile As Workbook)
   ' First: Set all judge references, regardless of affiliation
   Dim evaluationSheet As Worksheet
   Set evaluationSheet = pairFile.Worksheets(pairFile.Worksheets.Count) ' the evaluation Sheet is the last one
-  'set Supervisor name in Row 7
-  evaluationSheet.Cells(7, 1) = pairFile.Worksheets(7).Name
+  'set Supervisor name
+  ' the Supervisor is on sheet 7. if there is no supervisor, we use the Head judge as a reference, Head Judge has index 3
+  If pairFile.Worksheets.Count < 7 Then
+    evaluationSheet.Cells(7, 1) = pairFile.Worksheets(3).Name
+  Else
+    evaluationSheet.Cells(7, 1) = pairFile.Worksheets(7).Name
+  End If
+  
   ' iterate over sheets 1 to  sheetcount - 1, set their names into the Table A8...A15 in the evaluation sheet
   For sheetIndex = 1 To pairFile.Sheets.Count - 1
     ' skip the 7
     If sheetIndex = 7 Then
-    GoTo NextIteration
+      GoTo NextIteration
     End If
     evaluationSheet.Cells(sheetIndex + 7, 1) = pairFile.Worksheets(sheetIndex).Name
 NextIteration:
   Next sheetIndex
   
   ' check affiliation: iterate over evaluationSheet A7..A11 (the 5 judges). If affiliation matches pair's affiliation - swap with A12
-  Dim judgeAffiliation As String, pairAffiliation As String
+  Dim judgeAffiliation As String
+  Dim pairAffiliation As String
+  Dim standInJudge As String
   pairAffiliation = getAffiliationFromString(evaluationSheet.Cells(1, 2)) ' pair designation is on the evaluationsheet, in B5
-  For judgeIndex = 8 To 12 ' row 8 to 12 are the original 5 judges, 13 is the stand-in
-    Dim test As String
-    test = evaluationSheet.Cells(judgeIndex, 2)
-    judgeAffiliation = getAffiliationFromString(evaluationSheet.Cells(judgeIndex, 2))
-    If judgeAffiliation = pairAffiliation Then
-      'switch stand-in with current judge
-      Dim intermediate As String
-      intermediate = evaluationSheet.Cells(judgeIndex, 1)
-      evaluationSheet.Cells(judgeIndex, 1) = evaluationSheet.Cells(13, 1) ' this is the stand-in
-      evaluationSheet.Cells(13, 1) = intermediate
-      ' Now we need to set the positions of stand-in and original judge
-      pairFile.Worksheets(judgeIndex - 7).Cells(11, 5) = "Springer!"
-      pairFile.Worksheets(6).Cells(11, 5) = intermediate & "!"
-      ' this will swap the stand-in with the first conflicting judge. If ANOTHER judge conflicts, she will not be swapped out because we exit the for loop here
-      Exit For
-    End If
-  Next judgeIndex
+  ' check if there is a stand-in
+  standInJudge = evaluationSheet.Cells(13, 1) ' this is the stand-in
+  If standInJudge <> "" Then ' there is a stand-in
+    For judgeIndex = 8 To 12 ' row 8 to 12 are the original 5 judges, 13 is the stand-in
+      Dim test As String
+      test = evaluationSheet.Cells(judgeIndex, 2)
+      judgeAffiliation = getAffiliationFromString(evaluationSheet.Cells(judgeIndex, 2))
+      If judgeAffiliation = pairAffiliation Then
+        'switch stand-in with current judge
+        Dim intermediate As String
+        intermediate = evaluationSheet.Cells(judgeIndex, 1)
+        evaluationSheet.Cells(judgeIndex, 1) = evaluationSheet.Cells(13, 1) ' this is the stand-in
+        evaluationSheet.Cells(13, 1) = intermediate
+        ' Now we need to set the positions of stand-in and original judge
+        pairFile.Worksheets(judgeIndex - 7).Cells(11, 5) = "Springer!"
+        pairFile.Worksheets(6).Cells(11, 5) = intermediate & "!"
+        ' this will swap the stand-in with the first conflicting judge. If ANOTHER judge conflicts, she will not be swapped out because we exit the for loop here
+        Exit For
+      End If ' End if matching affiliations
+    Next judgeIndex
+  End If ' End if there is a standin
 End Sub
 ' by convention, affiliations are put between Brackets "(" and ")" in designations. both brackets are unique
 Function getAffiliationFromString(designation As String)
