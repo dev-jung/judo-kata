@@ -1,4 +1,6 @@
-Attribute VB_Name = "Aggregator"
+' This is the result collector routine
+' (c) by Martin Jung in 2017
+
 ' Declarations
 Dim rootDirectory As String ' root Dir of DKM file strukture
 Dim dataPath As String ' copy source and target

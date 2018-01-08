@@ -1,4 +1,3 @@
-Attribute VB_Name = "SheetGenerator"
 ' This is the main generator routine
 ' (c) by Martin Jung in 2017
 
@@ -285,7 +284,6 @@ FileSystemFailure:
     MsgBox "A folder could not be created for the following path: " & path & ". Check the path name and try again."
     FolderCreate = False
     Exit Function
-
 End Function
 
 Function FolderExists(ByVal path As String) As Boolean
