@@ -1,5 +1,10 @@
+' Copyright (c) 2017, Martin Jung.
+' All rights reserved. This program and the accompanying materials
+' are made available under the terms of the Apache License Version 2.0, January 2004
+' which accompanies this distribution, and is available at
+' http://www.apache.org/licenses/
+
 ' This is the main generator routine
-' (c) by Martin Jung in 2017
 
 ' Declarations
 Dim fso As New FileSystemObject ' file system access
@@ -16,17 +21,19 @@ End Sub
 ' This creates the directory structure, loads the Template file, and starts the run for the given kata name
 Sub generate(kataSheetName As String)
   Dim templateFile As String ' Full path to the template file
+  Dim blankFileName As String ' The name of the file containing the blanks
   Dim targetPath As String ' copy source and target
   Dim parameters As Range ' all configuration parameters
   
   ' Config Parameters: Assumtion: We wont have more than 200 parameters
   Set parameters = Sheets(ThisWorkbook.Sheets.Count).Range("A3:B203")
-
+  blankFileName = Sheets(ThisWorkbook.Sheets.Count).Cells(9, 8).Value
   ' File System Init
-  templateFile = ThisWorkbook.path & "\" & "Blank.xlsm"  ' Blank.xlsm is the template file
+  templateFile = ThisWorkbook.path & "\" & blankFileName
   targetPath = ThisWorkbook.path & "\" & Replace(parameters(1, 2), " ", "") ' The target directory for the generated files
-  ' transfer parameters to result sheet
+  ' transfer parameters to result and statistics file
   transferConfiguration parameters, ThisWorkbook.path & "\" & "Results.xlsm" ' Results.xlsm is the result file
+  transferConfiguration parameters, ThisWorkbook.path & "\" & "Statistics.xlsm" ' Statistics.xlsm is the file for overall tournament statistics and judge evaluation
   ' Create File System Structure
   If Not FolderExists(targetPath) Then
     FolderCreate targetPath
@@ -34,10 +41,10 @@ Sub generate(kataSheetName As String)
   If Not FolderExists(targetPath & "\" & kataSheetName) Then
     FolderCreate targetPath & "\" & kataSheetName
   End If
-  createPairFiles kataSheetName, templateFile, targetPath, Sheets(kataSheetName), parameters
+  createPairFiles kataSheetName, templateFile, targetPath, Sheets(kataSheetName), parameters, Sheets(ThisWorkbook.Sheets.Count).Cells(8, 8).Value 'last is the boolean containing print/noprint
 End Sub
 'this loops over all registered pairs and creates a file for each pair
-Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath As String, listSheet As Worksheet, parameters As Range)
+Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath As String, listSheet As Worksheet, parameters As Range, doPrint As Boolean)
   Set fso = VBA.CreateObject("Scripting.FileSystemObject")
   
   Dim startingPosition As String, pairAffiliation As String
@@ -65,13 +72,14 @@ Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath 
     pairFile.Sheets(1).Cells(7, 4) = parameters(17, 2) ' Name Title
     pairFile.Sheets(1).Cells(7, 6) = parameters(18, 2) ' Given Name Title
     pairFile.Sheets(1).Cells(7, 9) = parameters(21, 2) ' Club Title
-    pairFile.Sheets(1).Cells(7, 11) = parameters(22, 2) ' Affiliation Title
+    pairFile.Sheets(1).Cells(7, 12) = parameters(22, 2) ' Affiliation Title
     pairFile.Sheets(1).Cells(12, 1) = parameters(23, 2) ' Technique Title
     pairFile.Sheets(1).Cells(11, 6) = parameters(24, 2) ' Small Mistake Title
     pairFile.Sheets(1).Cells(11, 8) = parameters(25, 2) ' Medium Mistake Title
     pairFile.Sheets(1).Cells(11, 9) = parameters(26, 2) ' Big Mistake Title
-    pairFile.Sheets(1).Cells(11, 10) = parameters(27, 2) ' Omitted Technique Title
-    pairFile.Sheets(1).Cells(11, 11) = parameters(28, 2) ' Score Title
+    pairFile.Sheets(1).Cells(11, 10) = parameters(46, 2) ' Correction Value Title
+    pairFile.Sheets(1).Cells(11, 11) = parameters(27, 2) ' Omitted Technique Title
+    pairFile.Sheets(1).Cells(11, 12) = parameters(28, 2) ' Score Title
     pairFile.Sheets(1).Cells(13, 4) = parameters(35, 2) ' Opening
     pairFile.Sheets(1).Cells(29, 4) = parameters(36, 2) ' Closing
     pairFile.Sheets(1).Cells(36, 1) = parameters(29, 2) ' SumScore
@@ -88,7 +96,8 @@ Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath 
     pairFile.Sheets(2).Cells(2, 28) = parameters(24, 2) ' Small Mistake
     pairFile.Sheets(2).Cells(2, 29) = parameters(25, 2) ' Medium Mistake
     pairFile.Sheets(2).Cells(2, 30) = parameters(26, 2) ' Big Mistake
-    pairFile.Sheets(2).Cells(2, 31) = parameters(27, 2) ' Ommitted Technique
+    pairFile.Sheets(2).Cells(2, 31) = parameters(46, 2) ' Correction Value
+    pairFile.Sheets(2).Cells(2, 32) = parameters(27, 2) ' Ommitted Technique
     pairFile.Sheets(2).Cells(3, 1) = parameters(28, 2) & ":" ' Overall Score Title
     pairFile.Sheets(2).Cells(4, 1) = parameters(34, 2) & ":" ' Span
     pairFile.Sheets(2).Cells(5, 1) = parameters(32, 2) & ":" ' Average
@@ -98,21 +107,20 @@ Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath 
     pairFile.Sheets(1).Cells(1, 5) = parameters(1, 2) ' Competition Name
     pairFile.Sheets(1).Cells(2, 1) = parameters(2, 2) ' Competition Type
     pairFile.Sheets(1).Cells(5, 8) = parameters(4, 2) ' Competition Date
-    pairFile.Sheets(1).Cells(5, 11) = Format(startingPosition, "00")
-    pairFile.Sheets(1).Cells(8, 4) = listSheet.Cells(pairRow, 2)
-    pairFile.Sheets(1).Cells(8, 6) = listSheet.Cells(pairRow, 3)
-    pairFile.Sheets(1).Cells(8, 9) = listSheet.Cells(pairRow, 4)
-    pairFile.Sheets(1).Cells(9, 4) = listSheet.Cells(pairRow, 5)
-    pairFile.Sheets(1).Cells(9, 6) = listSheet.Cells(pairRow, 6)
-    pairFile.Sheets(1).Cells(9, 9) = listSheet.Cells(pairRow, 7)
-    pairFile.Sheets(1).Cells(8, 11) = pairAffiliation
-    pairFile.Sheets(1).Cells(9, 11) = pairAffiliation
+    pairFile.Sheets(1).Cells(5, 12) = Format(startingPosition, "00")
+    pairFile.Sheets(1).Cells(8, 4) = listSheet.Cells(pairRow, 2) ' Tori Name
+    pairFile.Sheets(1).Cells(8, 6) = listSheet.Cells(pairRow, 3) ' Tori Given
+    pairFile.Sheets(1).Cells(8, 9) = listSheet.Cells(pairRow, 4) ' Tori Club
+    pairFile.Sheets(1).Cells(9, 4) = listSheet.Cells(pairRow, 5) ' Uke Name
+    pairFile.Sheets(1).Cells(9, 6) = listSheet.Cells(pairRow, 6) ' Uke given
+    pairFile.Sheets(1).Cells(9, 9) = listSheet.Cells(pairRow, 7) ' Uke Club
+    pairFile.Sheets(1).Cells(8, 12) = pairAffiliation
+    pairFile.Sheets(1).Cells(9, 12) = pairAffiliation
     
     ' protect dynamic cells from overflow
     pairFile.Sheets(1).Cells(1, 5).ShrinkToFit = True ' Competition Name
     pairFile.Sheets(1).Range("D8:I9").ShrinkToFit = True ' Uki and Tori Name
     pairFile.Sheets(1).Cells(5, 8).ShrinkToFit = True ' Date
-
     
     ' loop over judges
     createJudgeSheets pairFile, listSheet, pairAffiliation, pairFile.Sheets(1)
@@ -123,8 +131,10 @@ Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath 
     'sheet finished, clean up, save, close, move on to next row
     pairFile.Sheets(1).Activate 'Next File Open shows Sheet 1
     pairFile.Save
-    'print to pdf (standard printer)
-    pairFile.PrintOut 1, pairFile.Sheets.Count - 1, 1, False
+    'print to pdf (standard printer) if print flag is set in generator parameters
+    If doPrint Then
+      pairFile.PrintOut 1, pairFile.Sheets.Count - 1, 1, False
+    End If
     
     pairFile.Close
     startNumber = startNumber + 1
@@ -159,8 +169,8 @@ Sub createJudgeSheets(pairFile As Workbook, listSheet As Worksheet, pairAffiliat
   ' Protect all judge sheets
   For judgeSheetIndex = 1 To pairFile.Sheets.Count - 1
     pairFile.Sheets(judgeSheetIndex).Range("A1:ZZ1000").Locked = True ' lock "everything"
-    pairFile.Sheets(judgeSheetIndex).Range("F13:J29").Locked = False ' Unlock evaluation fields
-    pairFile.Sheets(judgeSheetIndex).Range("K37:K37").Locked = False ' Unlock signature cell
+    pairFile.Sheets(judgeSheetIndex).Range("F13:K35").Locked = False ' Unlock evaluation fields
+    pairFile.Sheets(judgeSheetIndex).Range("L37:L37").Locked = False ' Unlock signature cell
     pairFile.Sheets(judgeSheetIndex).Protect "generated" ' set write protection
   Next judgeSheetIndex
 End Sub
@@ -200,17 +210,17 @@ Function createFileForKata(templateFile As String, targetPath As String, kataShe
     Set createFileForKata = newFile
 End Function
 ' Configuration Parameter are kept in the list file. they need to be transferred to the Results file
-Sub transferConfiguration(parameters As Range, resultFileName As String)
-  'open results file
-  Dim resultBook As Workbook
+Sub transferConfiguration(parameters As Range, targetFileName As String)
+  'open target file
+  Dim targetBook As Workbook
   Dim configSheet As Worksheet
-  Set resultBook = Workbooks.Open(resultFileName)
-  Set configSheet = resultBook.Sheets("Configuration")
+  Set targetBook = Workbooks.Open(targetFileName)
+  Set configSheet = targetBook.Sheets("Configuration")
   'write parameters
   parameters.Copy Destination:=configSheet.Range("A3")
   'save & close
-  resultBook.Save
-  resultBook.Close
+  targetBook.Save
+  targetBook.Close
 End Sub
 ' this sets the references to the judge sheets in the evaluation sheet
 Sub setJudgeReferences(pairFile As Workbook)
