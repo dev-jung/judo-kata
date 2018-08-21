@@ -32,13 +32,13 @@ Sub Fetch()
     Set evaluationFile = Workbooks.Open(Filename:=targetPath & pairFile)
     ' Set start number
     Dim startnumber As String
-    startnumber = "P-" & evaluationFile.Sheets(1).Cells(5, 11).Value ' Start Number
+    startnumber = "P-" & evaluationFile.Sheets(1).Cells(5, 12).Value ' Start Number
     resultSheet.Cells(2 + pairIndex, 48).Value = startnumber
     ' Set pair name
     Dim pair As String
     pair = evaluationFile.Sheets(1).Cells(8, 4).Value ' Toris Name
     pair = pair & "-" & evaluationFile.Sheets(1).Cells(9, 4).Value ' Ukes Name
-    pair = pair & " (" & evaluationFile.Sheets(1).Cells(8, 11) & ")" ' affiliation
+    pair = pair & " (" & evaluationFile.Sheets(1).Cells(8, 12) & ")" ' affiliation
     resultSheet.Cells(2 + pairIndex, 49).Value = pair
     ' Fetch result scores of individual techniques
     Set pairSummarySheet = evaluationFile.Sheets(evaluationFile.Sheets.Count)
@@ -51,16 +51,16 @@ Sub Fetch()
     ' Fetch sum
     resultSheet.Cells(2 + pairIndex, 73).Value = pairSummarySheet.Cells(3, 26).Value
     
-    ' Fetch mistake counters
-    For evalIndex = 74 To 77
+    ' Fetch mistake counters and correction value
+    For evalIndex = 74 To 78
       resultSheet.Cells(2 + pairIndex, evalIndex).Value = pairSummarySheet.Cells(3, evalIndex - 46).Value
     Next evalIndex
     ' Fetch all WR results; cannot loop because values are transposed
-    resultSheet.Cells(2 + pairIndex, 78).Value = pairSummarySheet.Cells(8, 26).Value ' Wertung 1
-    resultSheet.Cells(2 + pairIndex, 79).Value = pairSummarySheet.Cells(9, 26).Value ' Wertung 2
-    resultSheet.Cells(2 + pairIndex, 80).Value = pairSummarySheet.Cells(10, 26).Value ' Wertung 3
-    resultSheet.Cells(2 + pairIndex, 81).Value = pairSummarySheet.Cells(11, 26).Value ' Wertung 4
-    resultSheet.Cells(2 + pairIndex, 82).Value = pairSummarySheet.Cells(12, 26).Value ' Wertung 5
+    resultSheet.Cells(2 + pairIndex, 79).Value = pairSummarySheet.Cells(8, 26).Value ' Wertung 1
+    resultSheet.Cells(2 + pairIndex, 80).Value = pairSummarySheet.Cells(9, 26).Value ' Wertung 2
+    resultSheet.Cells(2 + pairIndex, 81).Value = pairSummarySheet.Cells(10, 26).Value ' Wertung 3
+    resultSheet.Cells(2 + pairIndex, 82).Value = pairSummarySheet.Cells(11, 26).Value ' Wertung 4
+    resultSheet.Cells(2 + pairIndex, 83).Value = pairSummarySheet.Cells(12, 26).Value ' Wertung 5
     pairIndex = pairIndex + 1
     pairFile = Dir
     evaluationFile.Close SaveChanges:=False
