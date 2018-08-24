@@ -9,3 +9,5 @@ The code and the excel templates are made available under the terms of the Apach
 
 In order to get to know the package, have a look at "examples" directory and play around with the test data.
 In order to start modifying the package, have a look at "Templates" directory, and the documentation there.
+
+The end-user documentation is in "usage.md"
