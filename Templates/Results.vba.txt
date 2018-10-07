@@ -94,7 +94,7 @@ Sub BuildTable(resultSheet As Worksheet)
     resultSheet.Cells(resultTableIndex, 4).Value = resultSheet.Cells(pairIndex, 73) ' overall score
     ' transfer the jude scores
     For resultTableColumnIndex = 29 To 33
-      resultSheet.Cells(resultTableIndex, resultTableColumnIndex).Value = resultSheet.Cells(pairIndex, resultTableColumnIndex + 49)
+      resultSheet.Cells(resultTableIndex, resultTableColumnIndex).Value = resultSheet.Cells(pairIndex, resultTableColumnIndex + 50)
     Next resultTableColumnIndex
     ' transfer technique scores
     For resultTableColumnIndex = 6 To 27
