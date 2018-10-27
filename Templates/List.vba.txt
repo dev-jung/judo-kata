@@ -81,7 +81,7 @@ Sub createPairFiles(kataSheetName As String, templateFile As String, targetPath 
     pairFile.Sheets(1).Cells(11, 11) = parameters(27, 2) ' Omitted Technique Title
     pairFile.Sheets(1).Cells(11, 12) = parameters(28, 2) ' Score Title
     pairFile.Sheets(1).Cells(13, 4) = parameters(35, 2) ' Opening
-    pairFile.Sheets(1).Cells(29, 4) = parameters(36, 2) ' Closing
+    pairFile.Sheets(1).Cells(35, 4) = parameters(36, 2) ' Closing
     pairFile.Sheets(1).Cells(36, 1) = parameters(29, 2) ' SumScore
     pairFile.Sheets(1).Cells(37, 1) = parameters(16, 2) & ":" ' Judge Position Title
     pairFile.Sheets(1).Cells(37, 6) = parameters(30, 2) ' Transcript checked
