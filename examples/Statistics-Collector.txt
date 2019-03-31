@@ -1,0 +1,197 @@
+' Copyright (c) 2017, Martin Jung.
+' All rights reserved. This program and the accompanying materials
+' are made available under the terms of the Apache License Version 2.0, January 2004
+' which accompanies this distribution, and is available at
+' http://www.apache.org/licenses/
+
+' This is the statistics collector routine
+
+' Declarations
+Dim rootDirectory As String ' root Dir of kata evaluation file strukture
+Dim dataPath As String ' copy source and target
+Dim filePrefix As String ' file name prefix for the pairing files
+Dim competitionName As String ' Name of the competition
+Dim importSheet As Worksheet ' Worksheet that contains the imported values
+
+Sub Fetch()
+  Dim resultSheet As Worksheet
+  Dim basePath As String
+  Dim kataDirs() As String
+  Dim parameters As Range ' all configuration parameters
+  Dim pairIndex As Integer
+  Dim evaluationFile As Workbook
+  
+  ReDim kataDirs(20)
+    
+  Set resultSheet = Sheets(ThisWorkbook.Sheets.Count - 1) ' the database sheet is second to last
+  ' Config Parameters: Assumtion: We wont have more than 200 parameters
+  Set parameters = Sheets(ThisWorkbook.Sheets.Count).Range("A3:B203")
+  
+  basePath = ThisWorkbook.Path & "\" & Replace(parameters(1, 2), " ", "") & "\" ' The base directory for all generated files of this tournament
+
+  ' cleanup import area
+  resultSheet.Range("A2:ZZ5000").ClearContents
+  pairIndex = 2
+  
+  ' iterate over all kata directories
+  kataDir = Dir$(basePath & "*", vbDirectory)
+  kataDirsIndex = 0
+  Do While kataDir <> ""
+    kataDirs(kataDirsIndex) = kataDir
+    kataDirsIndex = kataDirsIndex + 1
+    kataDir = Dir$
+  Loop
+  ReDim Preserve kataDirs(kataDirsIndex - 1)
+  'iterate over all dirs and all files therein
+  For kataDirsIndex = 0 To UBound(kataDirs)
+    pairIndex = FetchKata(pairIndex, resultSheet, basePath, kataDirs(kataDirsIndex), parameters)
+  Next kataDirsIndex
+End Sub
+
+Function FetchKata(startAtRow As Integer, targetSheet As Worksheet, baseDirectory As String, kataDirectory As String, ByVal parameters As Range) As Integer
+  Dim retVal As Integer
+  Dim resultSheet As Worksheet
+  Set resultSheet = targetSheet
+  retVal = startAtRow
+  If InStr(1, kataDirectory, ".") = 1 Then
+    FetchKata = retVal
+    Exit Function
+  End If
+  Dim pairFile As String
+  pairFile = Dir(baseDirectory & kataDirectory & "\*.xlsm")
+  Do While pairFile <> ""
+    retVal = FetchPair(retVal, resultSheet, baseDirectory & kataDirectory & "\" & pairFile, parameters)
+    FetchKata = retVal
+    pairFile = Dir
+  Loop
+End Function
+
+Function FetchPair(rowIndex As Integer, resultSheet As Worksheet, pairFileName As String, ByVal parameters As Range) As Integer
+  FetchPair = rowIndex
+  Dim pairFile As Workbook
+  Dim pairSummary As Worksheet
+  Dim stringIndex As Integer
+  Dim kataName As String
+  Dim identifier As String
+  Dim pairAffiliation As String
+  Dim judgeAffiliation As String
+  Dim startnumber As String
+  Dim overallPlacement As String
+  'open Pair File
+  Set pairFile = Workbooks.Open(Filename:=pairFileName)
+  Set pairSummary = pairFile.Sheets(pairFile.Sheets.Count)
+  
+  identifier = pairSummary.Cells(1, 2) ' identifier
+  ' extract Affiliation from pair Identified
+  pairAffiliation = Left(identifier, Len(identifier) - 1)
+  pairAffiliation = Right(pairAffiliation, Len(pairAffiliation) - InStrRev(pairAffiliation, "("))
+  kataName = getKatanameFromFilename(pairFileName) ' Kata name
+  startnumber = pairFile.Sheets(1).Cells(5, 12) ' start number1
+  overallPlacement = FetchPlacement(pairFileName, "P-" & startnumber) 'overall placement
+  
+  resultSheet.Cells(rowIndex, 1) = identifier
+  resultSheet.Cells(rowIndex, 2) = kataName
+  resultSheet.Cells(rowIndex, 3) = "P-" & startnumber
+  resultSheet.Cells(rowIndex, 4) = pairAffiliation
+  resultSheet.Cells(rowIndex, 5) = overallPlacement
+  resultSheet.Cells(rowIndex, 6) = parameters.Cells(28, 2)  'judge name -> overall score title
+  'resultSheet.Cells(rowIndex, 7) = "'-" 'judge affiliation - blank for summary
+  'resultSheet.Cells(rowIndex, 8) = "'-" 'judge position - blank for summary
+  'resultSheet.Cells(rowIndex, 9) = "'-"  'supervisor? - blank for summary
+  'resultSheet.Cells(rowIndex, 10) = "'-"  'stand-in`? - blank for summary
+  resultSheet.Cells(rowIndex, 11) = pairSummary.Cells(3, 26) 'overall score
+  'resultSheet.Cells(rowIndex, 12) = "'-" ' deviation - blank for summary
+  resultSheet.Cells(rowIndex, 13) = pairSummary.Cells(3, 28) ' small
+  resultSheet.Cells(rowIndex, 14) = pairSummary.Cells(3, 29) ' medium
+  resultSheet.Cells(rowIndex, 15) = pairSummary.Cells(3, 30) ' big
+  resultSheet.Cells(rowIndex, 16) = pairSummary.Cells(3, 31) ' correction
+  resultSheet.Cells(rowIndex, 17) = pairSummary.Cells(3, 32) ' omitted
+  resultSheet.Cells(rowIndex, 18) = pairSummary.Cells(3, 3) ' opening
+  For techniqueIndex = 4 To 24 ' all techniques
+    resultSheet.Cells(rowIndex, 15 + techniqueIndex) = pairSummary.Cells(3, techniqueIndex)
+  Next techniqueIndex
+  resultSheet.Cells(rowIndex, 40) = pairSummary.Cells(3, 25) ' closing
+  rowIndex = rowIndex + 1
+  ' judge by judge ------------------------------------------------------------------------
+  For judgeIndex = 0 To 6
+    resultSheet.Cells(rowIndex, 1) = identifier
+    resultSheet.Cells(rowIndex, 2) = kataName
+    resultSheet.Cells(rowIndex, 3) = "P-" & startnumber
+    resultSheet.Cells(rowIndex, 4) = pairAffiliation
+    resultSheet.Cells(rowIndex, 5) = overallPlacement
+    resultSheet.Cells(rowIndex, 6) = pairSummary.Cells(7 + judgeIndex, 2) 'judge name
+    judgeAffiliation = pairSummary.Cells(7 + judgeIndex, 2)
+    judgeAffiliation = Left(judgeAffiliation, Len(judgeAffiliation) - 1)
+    judgeAffiliation = Right(judgeAffiliation, Len(judgeAffiliation) - InStrRev(judgeAffiliation, "("))
+    resultSheet.Cells(rowIndex, 7) = judgeAffiliation
+    resultSheet.Cells(rowIndex, 8) = pairSummary.Cells(7 + judgeIndex, 1) 'judge position
+    If judgeIndex = 0 Then
+      resultSheet.Cells(rowIndex, 9) = True 'supervisor!
+    Else
+      resultSheet.Cells(rowIndex, 9) = False  '!supervisor
+    End If
+    If judgeIndex = 6 Then
+      resultSheet.Cells(rowIndex, 10) = True 'supervisor!
+    Else
+      resultSheet.Cells(rowIndex, 10) = False  '!supervisor
+    End If
+    resultSheet.Cells(rowIndex, 11) = pairSummary.Cells(7 + judgeIndex, 26) 'overall score
+    resultSheet.Cells(rowIndex, 12) = pairSummary.Cells(7 + judgeIndex, 27) ' deviation percentage
+    resultSheet.Cells(rowIndex, 13) = pairSummary.Cells(7 + judgeIndex, 28) ' small
+    resultSheet.Cells(rowIndex, 14) = pairSummary.Cells(7 + judgeIndex, 29) ' medium
+    resultSheet.Cells(rowIndex, 15) = pairSummary.Cells(7 + judgeIndex, 30) ' big
+    resultSheet.Cells(rowIndex, 16) = pairSummary.Cells(7 + judgeIndex, 31) ' correction
+    resultSheet.Cells(rowIndex, 17) = pairSummary.Cells(7 + judgeIndex, 32) ' omitted
+    resultSheet.Cells(rowIndex, 18) = pairSummary.Cells(7 + judgeIndex, 3) ' opening
+    For techniqueIndex = 4 To 24 ' all techniques
+      resultSheet.Cells(rowIndex, 15 + techniqueIndex) = pairSummary.Cells(7 + judgeIndex, techniqueIndex)
+    Next techniqueIndex
+    resultSheet.Cells(rowIndex, 40) = pairSummary.Cells(7 + judgeIndex, 25) ' closing
+    rowIndex = rowIndex + 1
+  Next judgeIndex
+  pairFile.Close SaveChanges:=False
+  FetchPair = rowIndex
+End Function
+
+Function getKatanameFromFilename(fn As String) As String
+  Dim retVal As String
+  retVal = Right(fn, Len(fn) - InStrRev(fn, "\")) ' first, cut to filename only
+  retVal = Right(retVal, Len(retVal) - 4) ' cut the constant Pxx- prefix
+  retVal = Left(retVal, InStr(retVal, "-") - 1)
+  getKatanameFromFilename = retVal
+End Function
+
+Function FetchPlacement(pairFileName As String, startnumber As String) As String
+  FetchPlacement = "foo"
+  Dim rootPath As String
+  Dim kataSheetName As String
+  Dim resultTable As Workbook
+  Dim kataResult As Worksheet
+  'determine root path
+  ' 1. cut off filename
+  rootPath = Left(pairFileName, InStrRev(pairFileName, "\") - 1)
+  ' 2. cut off kata dir
+  ' first: store the kata dir name as kata sheet name
+  kataSheetName = Right(rootPath, Len(rootPath) - InStrRev(rootPath, "\"))
+  rootPath = Left(rootPath, InStrRev(rootPath, "\") - 1)
+  ' 3. cut off tournament dir
+  rootPath = Left(rootPath, InStrRev(rootPath, "\") - 1)
+  'open Results List
+  Set resultTable = Workbooks.Open(Filename:=rootPath & "\" & "Results.xlsm")
+  ' look for kata page
+  Set kataResult = resultTable.Sheets(kataSheetName)
+  'iterate over table entries
+  For pairRow = 5 To kataResult.Cells(kataResult.Rows.Count, 1).End(xlUp).Row ' Results start at row 5, valid rows are filled in column 1
+    'look for pairNumber, extract placement; break loop
+    If kataResult.Cells(pairRow, 2).Value = startnumber Then
+      FetchPlacement = kataResult.Cells(pairRow, 1).Value
+      Exit For
+    End If
+  Next pairRow
+  resultTable.Close SaveChanges:=False
+End Function
+
+Sub Clear()
+  ActiveSheet.Range("A2:AN100").ClearContents
+  ActiveSheet.Range("A1:AZ1").Font.Bold = True
+End Sub
